@@ -1,0 +1,53 @@
+# This is a short description of the commands in R and MS Excel to convert the XZ matrix into polar coordinates
+
+R/Excel-Vignette 
+Plant data transformation for magenta box roots in XbyY matrix to polar coordinates
+
+Requires
+RESHAPE2
+
+Step 1.  Extract matrix for each individual plant (Excel)
+•	Create a CSV file, and fill the top row with column titles of increasing numbers (Pixel position on X axis)
+• Row numbers are Z axis
+•	You can identify center of plant as a cluster of maximum numbers (record cell address for center), or visual inspection of the image on YX and YZ images
+•	Typical Result: center of plant is row 189, column 363
+•	Save file as .csv
+
+Step 2. Transform matrix to data frame or table (R)
+plantc <- read.csv(file="L:\\Research\\Root3dmatrixMay2013\\PlantC.csv”)
+•	Notes: full path to file and double the “\” to “\\”
+•	Test with 
+dim(plantc)
+•	Sample Result:
+•	[1] 610 616
+•	Convert to matrix
+plantc.m <-as.matrix(plantc)
+•	Test with
+Fix(plantc.m)
+•	if needed Fix column names with
+colnames(plantc)<-1:616
+•	Load  reshape2
+library(reshape2)
+•	Melt matrix into a table
+plantc.t <- melt(plantc.m)
+•	Write to csv file
+write.csv(plantc.t, "L:\\Research\\Root3dmatrixMay2013\\plantct.csv")
+
+Step 3. process csv file in excel
+•	Delete first column (row ID numbers)
+•	Rename first two columns to (row, column)
+•	Convert to Y and X with center at 0,0
+o	[D2]=(188-A2) for rows to Y where 188 was the Z center of the plant from step 1
+o	[C2]=(B2-363) for columns to X where 363 was the X center of the plant from step 1
+•	Convert  Y and X to polar coordinates
+o	Radius [E2] = sqrt(D2^2+C2^2)
+o	Angle (in radians) = arctan of Y over X or =ATAN(D2/C2)
+•	Convert radians to degrees by quadant using an if statement
+o	=IF(D2=0,IF(C2=0,"center",IF(C2<0,180,0)),IF(C2=0,IF(D2<0,90,270),IF(C2<0,180+DEGREES(F2),IF(D2>0,DEGREES(F2),360+DEGREES(F2)))))
+o	Where C2 is X, D2 is Y and F2 is the angle in radians
+Step 4 bin into histogram using sumif statement
+•	Create bins for each angle band desired (10 degree increment for example creates 35 bins
+•	Use a sumif-S statement with 2 conditional variables
+•	SUMIFS(F:F,E:E,">="&I2,E:E,"<"&J2)
+•	Where F is the column with root values, E is the column with degrees, I2 has the beginning of the bin (ie. 0) and J2 has the end of the bin (ie. 10 for 10 degree increments)
+•	Note use of the & symbol to combine text and cell address information.
